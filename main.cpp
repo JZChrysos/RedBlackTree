@@ -50,14 +50,14 @@ void rem(Node*& head, int num){
 		}
 		else if(head->left == NULL && head->right != NULL){
 			head = head->right;
-			delete head;
+			head = NULL;
 		}
 		else if(head->left != NULL && head->right == NULL){
 			head = head->left;
-			delete head;
+			head = NULL;
 		}
 		else{
-			delete head;
+			head = NULL;
 		}
 	}
 	else{
@@ -108,11 +108,11 @@ int main(){
 			bool done = false;
 			while(done == false){
 			int num;
+			cin >> num;
 			if (num == 0){
 				done = true;
 			}
 			else{
-			cin >> num;
 			add(head,num);
 			}
 			}
