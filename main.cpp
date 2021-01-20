@@ -199,6 +199,333 @@ Node* rem(Node*& head, int num){
 		return head;
 	}
 }
+Node * sib(Node * node){
+	if(node->parent == NULL){
+		return NULL;
+	}
+	else if(node->parent->right == node){
+		return node->parent->left;
+	}
+	else{
+		return node->parent->right; 
+	}
+}
+void delbalance(Node*& head, Node*& P, Node*& S){// node is the place where a removed node used to be (kinda). This function only deals with the case where the removed node and replacement are both black, since all other cases are easy.
+	//Case 1: node is the new head
+	if(P == NULL){
+		cout << "Case 1";
+		return;
+	}
+	Node * node;
+	if(P->right == S){
+		node = P->left;
+	}
+	else{
+		node = P->right;
+	}
+	//Case 2: sib(node) is red
+	if(S != NULL && S->red == true){ //sibling can't be null anyways
+		P->red = true;
+		S->red = false;
+		if(P != head){
+			S->parent = P->parent;
+			if(P->parent->right == P){
+				P->parent->right = S;
+			}
+			else{
+				P->parent->left = S;
+			}
+		}
+		else{
+			S->parent = NULL;
+			head = S;
+		}
+		P->parent = S;
+		if(P->right == node){
+			P->left = S->right;
+			if(S->right != NULL){
+				S->right->parent = P;
+			}
+			S->right = P;
+		}
+		else{
+			P->right = S->left;
+			if(S->left != NULL){
+				S->left->parent = P;
+			}
+			S->left = P;
+		}
+		cout << "Ran case 2";
+		delbalance(head, node->parent, S); // recurrence, will be passed to a later case
+	}
+	//Case 3: P,X,Y black
+	else if(P->red == false && (S->right == NULL || S->right->red == false) && (S->left == NULL || S->left->red == false)){
+		S->red = true;
+		Node * Aunt = sib(P);
+		if(P->parent != NULL){
+			delbalance(head, P->parent, Aunt);
+		}
+		cout << "Ran case 3";
+	}
+	//Case 4: P Red, X,Y black
+	else if(P->red == true && (S->right == NULL || S->right->red == false) && (S->left == NULL || S->left->red == false)){
+		S->red = true;
+		P->red = false;
+		cout << "Ran case 4";
+	}
+	//Case 5: X red, Y black
+	else if(P->red == true && P->right == node && S->right->red == true && (S->left == NULL || S->left->red == false)){
+		S->red = true;
+		S->right->red = false;
+		Node * X = S->right;
+		P->left = X;
+		X->parent = P;
+		S->right = X->left;
+		if(X->left != NULL){
+			X->left->parent = S;
+		}
+		X->left = S;
+		S->parent = X;
+		delbalance(head, node->parent, S);
+		cout << "Ran case 5";
+	}
+	else if(P->red == true && P->left == node && S->left->red == true && (S->right == NULL || S->right->red == false)){
+		S->red = true;
+		S->left->red = false;
+		Node * X = S->left;
+		P->right = X;
+		X->parent = P;
+		S->left = X->right;
+		if(X->right != NULL){
+			X->right->parent = S;
+		}
+		X->right = S;
+		S->parent = X;
+		delbalance(head, node->parent, S);	
+		cout << "Ran case 5";
+	}
+	//Case 6: X black, Y red
+	else if(P->left == node && S->right->red == true){
+		bool pisred = P->red;
+		P->red = S->red;
+		S->red = pisred;
+		S->right->red = false;
+		Node * G = P->parent;
+		if(P == head){
+			S->parent = NULL;
+			head = S;
+		}
+		else{
+			S->parent = G;
+			if(G->right == P){
+				G->right = S;
+			}	
+			else{
+				G->left = S;
+			}
+		}
+		P->parent = S;
+		P->right = S->left;
+		if(S->left != NULL){
+			S->left->parent = P;
+		}
+		S->left = P;
+		cout << "Ran case 6";
+	}
+	else if(P->right == node && S->left->red == true){
+		bool pisred = P->red;
+		P->red = S->red;
+		S->red = pisred;
+		S->left->red = false;
+		Node * G = P->parent;
+		if(P == head){
+			S->parent = NULL;
+			head = S;
+		}
+		else{
+			S->parent = G;
+			if(G->right == P){
+				G->right = S;
+			}	
+			else{
+				G->left = S;
+			}
+		}
+		P->parent = S;
+		P->left = S->right;
+		if(S->right != NULL){
+			S->right->parent = P;
+		}
+		S->right = P;
+		cout << "Ran case 6";
+	}
+
+}
+void del(Node*& head, Node*& node, int num){ //starting at node, removes the value num, updates the tree (head may change)
+	if(node == NULL){
+		cout << "Not found, sorry king :(" << endl;
+	}
+	else if (node->data == num){ // here node must be deleted
+		if(node->left != NULL && node->right != NULL){
+			Node * current = node->right;
+			while(current->left != NULL){
+				current = current->left;
+			}
+			Node * P;
+			if(current != node->right){
+				P = current->parent;
+			}
+			else{
+				P = current;
+			}
+			Node * S = sib(current);
+			//determine if balancing needs to be done, and fixes colors if not
+			bool balance = false;
+			if(current != node->right){
+				if(current->red == false && current->right == NULL){
+					balance = true;
+				}
+				else if(current->red == false && current->right->red == true){
+					balance = true;
+				}
+				else if(current->red == false && current->right != NULL && current->right->red == true){
+					current->right->red = false;
+				}
+				if(current->right != NULL){
+					current->right->parent = current->parent;
+					current->parent->left = current->right;
+				}
+				else{
+					current->parent->left = NULL;
+				}
+				current->red = node->red;
+				current->right = node->right;
+				node->right->parent = current;
+				current->left = node->left;
+				node->left->parent = current;
+			}
+			else{
+				if(node->red == false && current->red == false){
+					balance = true;
+				}
+				else if(node->red == false && current->red == true){
+					current->red = false;
+				}
+				else if(node->red == true){
+					current->red = true;
+					if(current->right != NULL){
+						current->right->red = false;
+					}
+					else{
+						balance = true;
+					}
+				}
+				current->left = node->left;
+				node->left->parent = current;
+			}
+			if(node != head){
+				current->parent = node->parent;
+				if(node->parent->right == node){
+					node->parent->right = current;
+				}
+				else if(node->parent->left == node){
+					node->parent->left = current;
+				}
+			}
+			else{
+				current->parent = NULL;
+				current->red = false; // root must be black
+				head = current;
+			}
+			if(balance == true){
+				delbalance(head, P, S);
+			}
+		}
+		else if(node->left == NULL && node->right != NULL){
+			// determine if balancing needs to be done
+			bool balance = false;
+			if(node->red == false && node->right->red == false){
+				balance = true;
+			}
+			else if(node->red == false && node->right->red == true){
+				node->right->red = false;
+			}
+			if(node != head){
+				node->right->parent = node->parent;
+				if(node->parent->right == node){
+					node->parent->right = node->right;
+				}
+				else{
+					node->parent->left = node->right;
+				}
+			}
+			else{
+				node->right->parent = NULL;
+				node->right->red = false; // root must be black
+				head = node->right;
+			}
+			if(balance == true){
+				Node * dummy = NULL;
+				delbalance(head, node, dummy);
+			}
+		}
+		else if(node->left != NULL && node->right == NULL){
+			// determine if balancing needs to be done
+			bool balance = false;
+			if(node->red == false && node->left->red == false){
+				balance = true;
+			}
+			else if(node->red == false && node->left->red == true){
+				node->left->red = false;
+			}
+			if(node != head){
+				node->left->parent = node->parent;
+				if(node->parent->right == node){
+					node->parent->right = node->left;
+				}
+				else{
+					node->parent->left = node->left;
+				}
+			}
+			else{
+				node->left->parent = NULL;
+				head = node->left;
+			}
+			if(balance == true){
+				Node * dummy = NULL;
+				delbalance(head, node, dummy);
+			}
+		}
+		else if(node->left == NULL && node->right == NULL){
+			if(node != head){
+				bool balance = false;
+				if(node->red == false){
+					balance = true;
+				}
+				Node * P = node->parent;
+				Node * S = sib(node);
+				if(P->right == node){
+					P->right = NULL;
+				}
+				else{
+					P->left = NULL;
+				}
+				if(balance == true){
+					delbalance(head, P, S);
+				}
+			}
+			else{
+				head = NULL;
+			}
+		}
+	}
+	else if(node->data > num){
+		del(head, node->left, num);
+	}
+	else if(node->data < num){
+		del(head, node->right, num);
+	}
+}
 bool search(Node*& head, int num){
 	if (head == NULL){
 		return false;
@@ -234,7 +561,7 @@ int main(){
 	//enter loop
 	bool quit = false;
 	while(quit == false){
-	cout << "What would you like to do? Add (A), or read a File (F)? or Quit (Q): ";
+	cout << "What would you like to do? Add (A), read a File (F), delete (D), or search (S)? or Quit (Q): ";
 	char input;
 	cin >> input;
 	if (input == 'A'){
@@ -306,11 +633,12 @@ int main(){
 			cout << endl;
 	}
 
-	else if (input == 'R'){
+	else if (input == 'D'){
 		cout << endl << "What int would you like to delete? ";
 		int delint;
 		cin >> delint;
-		head = rem(head,delint);	
+		del(head,head,delint);
+		vis(head,0);	
 	}
 	else if (input == 'V'){
 		vis(head, 0);
