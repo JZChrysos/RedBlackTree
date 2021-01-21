@@ -210,7 +210,7 @@ Node * sib(Node * node){
 		return node->parent->right; 
 	}
 }
-void delbalance(Node*& head, Node*& P, Node*& S){// node is the place where a removed node used to be (kinda). This function only deals with the case where the removed node and replacement are both black, since all other cases are easy.
+void delbalance(Node*& head, Node* P, Node* S){// node is the place where a removed node used to be (kinda). This function only deals with the case where the removed node and replacement are both black, since all other cases are easy.
 	//Case 1: node is the new head
 	if(P == NULL){
 		cout << "Case 1";
@@ -241,12 +241,14 @@ void delbalance(Node*& head, Node*& P, Node*& S){// node is the place where a re
 			head = S;
 		}
 		P->parent = S;
+		Node * NewS;
 		if(P->right == node){
 			P->left = S->right;
 			if(S->right != NULL){
 				S->right->parent = P;
 			}
 			S->right = P;
+			NewS = P->left;
 		}
 		else{
 			P->right = S->left;
@@ -254,9 +256,10 @@ void delbalance(Node*& head, Node*& P, Node*& S){// node is the place where a re
 				S->left->parent = P;
 			}
 			S->left = P;
+			NewS = P->right;
 		}
 		cout << "Ran case 2";
-		delbalance(head, node->parent, S); // recurrence, will be passed to a later case
+		delbalance(head, P, NewS); // recurrence, will be passed to a later case
 	}
 	//Case 3: P,X,Y black
 	else if(P->red == false && (S->right == NULL || S->right->red == false) && (S->left == NULL || S->left->red == false)){
